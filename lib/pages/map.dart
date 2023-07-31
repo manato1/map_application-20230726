@@ -9,6 +9,8 @@ import 'dart:math' show Random, asin, cos, sqrt;
 
 import 'package:shared_preferences/shared_preferences.dart';
 
+import '../common/common_methods.dart';
+
 class Secrets {
   // Google Maps APIキーをここに追加
   static const API_KEY = 'AIzaSyBw_oOMe69Q4EX4L_v3LWECO9PBx4SktRo';
@@ -77,9 +79,15 @@ class MapPageState extends State<MapPage> {
     });
   }
 
+  List<String>? catList;
+
   @override
   void initState() {
     super.initState();
+    Future(() async {
+      var prefs = await SharedPreferences.getInstance();
+      catList = prefs.getStringList("catIdList");
+    });
     _getCurrentLocation();
   }
 
@@ -320,30 +328,31 @@ class MapPageState extends State<MapPage> {
 
   LatLng? _tappedLatLng; // タップした位置の緯度経度情報
   final _formKey = GlobalKey<FormState>();
-  String _name = '';
+  String _title = '';
   String _text = '';
-  void addData(category,title,text,latitude,longitude)async{
-    var prefs = await SharedPreferences.getInstance();
-    final id = generateNonce();
-    // prefs.setInt("last_at", DateTime.now().microsecondsSinceEpoch);
-    // prefs.setStringList(id, [
-    //   category,
-    //   title,
-    //   text,
-    //   latitude,
-    //   longitude
-    // ]);
+  String _categoryId = "";
 
-    //list生成
-    final list = [];
-    // prefs.setStringList(idList, list);
+  void storageMarker(category, title, text, latitude, longitude) async {
+    var prefs = await SharedPreferences.getInstance();
+    final List<String>? idList = prefs.getStringList("idList");
+    final String id = CommonMethods().createRandamString();
+
+    //まだ一つも登録していなければ
+    try {
+      if (idList == null) {
+        prefs.setStringList("idList", [id]);
+        prefs.setStringList(id, [category, title, text, latitude, longitude]);
+      } else {
+        //idリストにid追加
+        idList.add(id);
+        prefs.setStringList("idList", idList);
+        prefs.setStringList(id, [category, title, text, latitude, longitude]);
+      }
+    } catch (e) {
+      CommonMethods().showSnackBar(context, "マーカーを追加できませんでした。");
+    }
   }
-  String generateNonce([int length = 5]) {
-    const charset = '0123456789ABCDEFGHIJKLMNOPQRSTUVXYZabcdefghijklmnopqrstuvwxyz-._';
-    final random = Random.secure();
-    final randomStr =  List.generate(length, (_) => charset[random.nextInt(charset.length)]).join();
-    return randomStr;
-  }
+
   void _showBottomSheet(BuildContext context, marker) async {
     bool _added = false;
     final result = await showModalBottomSheet(
@@ -375,6 +384,14 @@ class MapPageState extends State<MapPage> {
                       Text('緯度: ${_tappedLatLng!.latitude}'),
                       Text('経度: ${_tappedLatLng!.longitude}'),
                       SizedBox(height: 16.0),
+                      catList != null
+                          ? TextButton(
+                              onPressed: () {
+                                _chooseCategory(context);
+                                },
+                              child: Text("カテゴリー"))
+                          : SizedBox.shrink(),
+                      SizedBox(height: 16.0),
                       Form(
                         key: _formKey,
                         child: Column(
@@ -389,7 +406,7 @@ class MapPageState extends State<MapPage> {
                               },
                               onChanged: (value) {
                                 print(value);
-                                _name = value; // 入力された値を保存
+                                _title = value; // 入力された値を保存
                               },
                               decoration: InputDecoration(
                                 labelText: 'タイトル*',
@@ -413,8 +430,18 @@ class MapPageState extends State<MapPage> {
                               onPressed: () {
                                 if (_formKey.currentState!.validate()) {
                                   try {
+                                    // print([_categoryId,
+                                    //   _title,
+                                    //   _text,
+                                    //   _tappedLatLng!.latitude,
+                                    //   _tappedLatLng!.longitude]);
                                     //データ保存
-                                    addData("category","title","text","latitude","longitude");
+                                    storageMarker(
+                                        _categoryId,
+                                        _title,
+                                        _text,
+                                        _tappedLatLng!.latitude,
+                                        _tappedLatLng!.longitude);
                                     _added = true;
                                     Navigator.of(context)
                                         .pop('モーダルを閉じました'); // モーダルを閉じる
@@ -437,6 +464,39 @@ class MapPageState extends State<MapPage> {
         markers.remove(marker);
       });
     }
+  }
+
+  Future _chooseCategory(BuildContext context) async {
+    var prefs = await SharedPreferences.getInstance();
+    List<List<String>?> categoryList = [];
+    for (var i = 0; i < catList!.length; i++) {
+      final String catId = catList![i];
+      final String? catName = prefs.getString(catId);
+      categoryList.add([catId,catName!]);
+    }
+
+    final List<Widget> catWidget = categoryList.map(
+      (category) => SimpleDialogOption(
+        child: Container(
+          child: ListTile(
+            title: Text(category![1]),
+            tileColor: Colors.grey[300],
+          ),
+        ),
+        onPressed: () {
+          _categoryId = category![0];
+          Navigator.pop(context, "ダイアログ閉じました");
+        },
+      ),
+    ).toList();
+
+    // (1) ダイアログの表示
+    var answer = await showDialog(
+        context: context,
+        // (2) SimpleDialogの作成
+        builder: (context) => SimpleDialog(
+              children: catWidget,
+            ));
   }
 
   @override

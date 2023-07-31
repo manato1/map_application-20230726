@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:map_application_20230726/pages/map.dart';
+import 'package:map_application_20230726/pages/marker.dart';
 
-import '../widgets/common_widgets.dart';
+import '../common/common_widgets.dart';
+import 'category_page.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -94,11 +96,11 @@ class _HomePageState extends State<HomePage> {
                       HomeButton1(
                           iconData: Icons.location_on,
                           label: 'マーカー',
-                          color: Colors.blue,widget: MapPage()),
+                          color: Colors.blue,widget: MarkerPage()),
                       HomeButton1(
                           iconData: Icons.format_list_bulleted,
                           label: 'カテゴリー',
-                          color: Colors.orange,widget: MapPage()),
+                          color: Colors.orange,widget: CategoryPage()),
                       // _buildButton1(Icons.accessible, 'ボタン4', Colors.green),
                     ],
                   ),
