@@ -16,8 +16,15 @@ class Secrets {
   static const API_KEY = 'AIzaSyBw_oOMe69Q4EX4L_v3LWECO9PBx4SktRo';
 }
 
+//markerIdのリストを渡す、その数だけmarkerに追加する
 class MapPage extends StatefulWidget {
-  const MapPage({Key? key}) : super(key: key);
+  const MapPage({
+    Key? key,
+    required this.value,
+    required this.value2
+  }) : super(key: key);
+  final List<String> value;
+  final String value2;
 
   @override
   State<MapPage> createState() => MapPageState();
@@ -54,41 +61,147 @@ class MapPageState extends State<MapPage> {
 
   // 2点間を結ぶポリラインを格納した地図
   Map<PolylineId, Polyline> polylines = {};
+  Future<SharedPreferences> _prefs = SharedPreferences.getInstance();
 
   // 現在位置の取得方法
   _getCurrentLocation() async {
+    SharedPreferences prefs = await _prefs;
     await Geolocator.getCurrentPosition(desiredAccuracy: LocationAccuracy.high)
         .then((Position position) async {
-      setState(() {
-        // 位置を変数に格納する
-        _currentPosition = position;
-        print('CURRENT POS: $_currentPosition');
-        // カメラを現在位置に移動させる場合
-        mapController.animateCamera(
-          CameraUpdate.newCameraPosition(
-            CameraPosition(
-              target: LatLng(position.latitude, position.longitude),
-              zoom: 18.0,
+      if (list.isNotEmpty) {
+        // カメラをマーカーの位置に移動させる場合
+
+        final List<String>? marker = prefs.getStringList(list[0]);
+        if (marker != null) {
+          final latitude = double.parse(marker[4]);
+          final longitude = double.parse(marker[5]);
+          setState(() {
+            mapController.animateCamera(
+              CameraUpdate.newCameraPosition(
+                CameraPosition(
+                  target: LatLng(latitude, longitude),
+                  zoom: 18.0,
+                ),
+              ),
+            );
+            print("object");
+          });
+          await _getAddress();
+        }
+      } else {
+        setState(() {
+          // 位置を変数に格納する
+          _currentPosition = position;
+          print('CURRENT POS: $_currentPosition');
+          // カメラを現在位置に移動させる場合
+          mapController.animateCamera(
+            CameraUpdate.newCameraPosition(
+              CameraPosition(
+                target: LatLng(position.latitude, position.longitude),
+                zoom: 18.0,
+              ),
             ),
-          ),
-        );
-      });
-      await _getAddress();
+          );
+        });
+        await _getAddress();
+      }
     }).catchError((e) {
       print(e);
     });
   }
 
-  List<String>? catList;
+  List<List<String>> markerList = [];
+  List<String>? markerIdList;
 
+  addMarker(List<String> list) async {
+    //markerListの初期化
+    markerList = [];
+    SharedPreferences prefs = await _prefs;
+    if (list.isEmpty) {
+      //marker全て取り出し
+      markerIdList = prefs.getStringList("markerIdList");
+      if (markerIdList != null) {
+        for (var i = 0; i < markerIdList!.length; i++) {
+          final List<String>? marker = prefs.getStringList(markerIdList![i]);
+          if (marker != null) {
+            String? cat = "";
+            //もしカテゴリー設定されていたらカテゴリー名取得
+            if (marker[0] != "") {
+              final catName = prefs.getString(marker[0]);
+              if (catName != null) {
+                cat = catName;
+              }
+            }
+            final id = markerIdList![i];
+            final title = marker[1];
+            final text = marker[2];
+            final address = marker[3];
+            final latitude = double.parse(marker[4]);
+            final longitude = double.parse(marker[5]);
+            // 開始位置用マーカー設置
+            Marker startMarker = Marker(
+              markerId: MarkerId(id),
+              position: LatLng(latitude, longitude),
+              infoWindow: InfoWindow(
+                title: address != "" ? title + "-" + address : title,
+                snippet: text,
+              ),
+              icon: BitmapDescriptor.defaultMarker,
+            );
+            markers.add(startMarker);
+          }
+        }
+      }
+    } else {
+      //list分繰り返し
+      for (var i = 0; i < list.length; i++) {
+        final List<String>? marker = prefs.getStringList(list[i]);
+        if (marker != null) {
+          String? cat = "";
+          //もしカテゴリー設定されていたらカテゴリー名取得
+          if (marker[0] != "") {
+            final catName = prefs.getString(marker[0]);
+            if (catName != null) {
+              cat = catName;
+            }
+          }
+          final id = list[i];
+          final title = marker[1];
+          final text = marker[2];
+          final address = marker[3];
+          final latitude = double.parse(marker[4]);
+          final longitude = double.parse(marker[5]);
+          // 開始位置用マーカー設置
+          Marker startMarker = Marker(
+            markerId: MarkerId(id),
+            position: LatLng(latitude, longitude),
+            infoWindow: InfoWindow(
+              title: '$title' + address != "" ? " - $address" : "",
+              snippet: text + cat != "" ? "- $cat" : "",
+            ),
+            icon: BitmapDescriptor.defaultMarker,
+          );
+          markers.add(startMarker);
+        }
+      }
+    }
+  }
+
+  List<String>? catList;
+  List<String> list = [];
+String title ="";
   @override
   void initState() {
     super.initState();
+    list = widget.value;
+    title = widget.value2;
+
     Future(() async {
       var prefs = await SharedPreferences.getInstance();
       catList = prefs.getStringList("catIdList");
     });
     _getCurrentLocation();
+    addMarker(list);
   }
 
   // アドレスの取得方法
@@ -127,7 +240,7 @@ class MapPageState extends State<MapPage> {
       List<Location>? startPlacemark = await locationFromAddress(_startAddress);
       List<Location>? destinationPlacemark =
           await locationFromAddress(_destinationAddress);
-
+      print(destinationPlacemark);
       // 開始位置がユーザーの現在位置の場合、アドレスではなく、取得した現在位置の座標を使用する方が精度が良いため。
       double startLatitude = _startAddress == _currentAddress
           ? _currentPosition.latitude
@@ -330,28 +443,8 @@ class MapPageState extends State<MapPage> {
   final _formKey = GlobalKey<FormState>();
   String _title = '';
   String _text = '';
+  String _addres = '';
   String _categoryId = "";
-
-  void storageMarker(category, title, text, latitude, longitude) async {
-    var prefs = await SharedPreferences.getInstance();
-    final List<String>? idList = prefs.getStringList("idList");
-    final String id = CommonMethods().createRandamString();
-
-    //まだ一つも登録していなければ
-    try {
-      if (idList == null) {
-        prefs.setStringList("idList", [id]);
-        prefs.setStringList(id, [category, title, text, latitude, longitude]);
-      } else {
-        //idリストにid追加
-        idList.add(id);
-        prefs.setStringList("idList", idList);
-        prefs.setStringList(id, [category, title, text, latitude, longitude]);
-      }
-    } catch (e) {
-      CommonMethods().showSnackBar(context, "マーカーを追加できませんでした。");
-    }
-  }
 
   void _showBottomSheet(BuildContext context, marker) async {
     bool _added = false;
@@ -388,7 +481,7 @@ class MapPageState extends State<MapPage> {
                           ? TextButton(
                               onPressed: () {
                                 _chooseCategory(context);
-                                },
+                              },
                               child: Text("カテゴリー"))
                           : SizedBox.shrink(),
                       SizedBox(height: 16.0),
@@ -436,13 +529,16 @@ class MapPageState extends State<MapPage> {
                                     //   _tappedLatLng!.latitude,
                                     //   _tappedLatLng!.longitude]);
                                     //データ保存
-                                    storageMarker(
+                                    CommonMethods().storageMarker(
+                                        context,
                                         _categoryId,
                                         _title,
                                         _text,
+                                        _addres,
                                         _tappedLatLng!.latitude,
                                         _tappedLatLng!.longitude);
                                     _added = true;
+                                    _categoryId = "";
                                     Navigator.of(context)
                                         .pop('モーダルを閉じました'); // モーダルを閉じる
                                   } catch (e) {
@@ -472,23 +568,25 @@ class MapPageState extends State<MapPage> {
     for (var i = 0; i < catList!.length; i++) {
       final String catId = catList![i];
       final String? catName = prefs.getString(catId);
-      categoryList.add([catId,catName!]);
+      categoryList.add([catId, catName!]);
     }
 
-    final List<Widget> catWidget = categoryList.map(
-      (category) => SimpleDialogOption(
-        child: Container(
-          child: ListTile(
-            title: Text(category![1]),
-            tileColor: Colors.grey[300],
+    final List<Widget> catWidget = categoryList
+        .map(
+          (category) => SimpleDialogOption(
+            child: Container(
+              child: ListTile(
+                title: Text(category![1]),
+                tileColor: Colors.grey[300],
+              ),
+            ),
+            onPressed: () {
+              _categoryId = category![0];
+              Navigator.pop(context, "ダイアログ閉じました");
+            },
           ),
-        ),
-        onPressed: () {
-          _categoryId = category![0];
-          Navigator.pop(context, "ダイアログ閉じました");
-        },
-      ),
-    ).toList();
+        )
+        .toList();
 
     // (1) ダイアログの表示
     var answer = await showDialog(
@@ -508,6 +606,7 @@ class MapPageState extends State<MapPage> {
       height: height,
       width: width,
       child: Scaffold(
+        appBar: AppBar(title: Text(title != ""?title:"マップ"),backgroundColor: Colors.red,),
         body: Stack(
           children: <Widget>[
             GoogleMap(
@@ -628,98 +727,98 @@ class MapPageState extends State<MapPage> {
                 ),
               ),
             ),
-
-            // 開智位置と目的位置を入力するためのUI
-            SafeArea(
-              child: Align(
-                alignment: Alignment.topCenter,
-                child: Padding(
-                  padding: const EdgeInsets.only(top: 10.0),
-                  child: Container(
-                    decoration: BoxDecoration(color: Colors.black38),
-                    width: width * 0.85,
-                    child: Padding(
-                      padding: const EdgeInsets.only(top: 5.0, bottom: 5.0),
-                      child: Column(
-                        mainAxisSize: MainAxisSize.min,
-                        children: <Widget>[
-                          Text(
-                            '場所検索',
-                            style:
-                                TextStyle(fontSize: 20.0, color: Colors.white),
-                          ),
-                          SizedBox(height: 10),
-                          _textField(
-                              label: '開始位置',
-                              hint: '開始位置を入力',
-                              prefixIcon: Icon(Icons.directions_walk),
-                              controller: startAddressController,
-                              focusNode: startAddressFocusNode,
-                              width: width,
-                              locationCallback: (String value) {
-                                setState(() {
-                                  _startAddress = value;
-                                });
-                              }),
-                          SizedBox(height: 10),
-                          _textField(
-                              label: '目的位置',
-                              hint: '目的位置を入力',
-                              prefixIcon: Icon(Icons.directions_walk),
-                              controller: destinationAddressController,
-                              focusNode: desrinationAddressFocusNode,
-                              width: width,
-                              locationCallback: (String value) {
-                                setState(() {
-                                  _destinationAddress = value;
-                                });
-                              }),
-                          SizedBox(height: 10),
-                          Visibility(
-                            visible: _placeDistance == null ? false : true,
-                            child: Text(
-                              'DISTANCE: $_placeDistance km',
-                              style:
-                                  TextStyle(color: Colors.white, fontSize: 16),
-                            ),
-                          ),
-                          SizedBox(height: 5),
-                          ElevatedButton(
-                            onPressed: (_startAddress != '' &&
-                                    _destinationAddress != '')
-                                ? () async {
-                                    startAddressFocusNode.unfocus();
-                                    desrinationAddressFocusNode.unfocus();
-                                    setState(() {
-                                      if (markers.isNotEmpty) markers.clear();
-                                      if (polylines.isNotEmpty)
-                                        polylines.clear();
-                                      if (polylineCoordinates.isNotEmpty)
-                                        polylineCoordinates.clear();
-                                      _placeDistance = null;
-                                    });
-
-                                    _RouteDistance();
-                                  }
-                                : null,
-                            child: Padding(
-                              padding: const EdgeInsets.all(8.0),
-                              child: Text(
-                                'ルート検索'.toUpperCase(),
-                                style: TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 20.0,
-                                ),
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                ),
-              ),
-            ),
+            //
+            // // 開智位置と目的位置を入力するためのUI
+            // SafeArea(
+            //   child: Align(
+            //     alignment: Alignment.topCenter,
+            //     child: Padding(
+            //       padding: const EdgeInsets.only(top: 10.0),
+            //       child: Container(
+            //         decoration: BoxDecoration(color: Colors.black38),
+            //         width: width * 0.85,
+            //         child: Padding(
+            //           padding: const EdgeInsets.only(top: 5.0, bottom: 5.0),
+            //           child: Column(
+            //             mainAxisSize: MainAxisSize.min,
+            //             children: <Widget>[
+            //               Text(
+            //                 '場所検索',
+            //                 style:
+            //                     TextStyle(fontSize: 20.0, color: Colors.white),
+            //               ),
+            //               SizedBox(height: 10),
+            //               _textField(
+            //                   label: '開始位置',
+            //                   hint: '開始位置を入力',
+            //                   prefixIcon: Icon(Icons.directions_walk),
+            //                   controller: startAddressController,
+            //                   focusNode: startAddressFocusNode,
+            //                   width: width,
+            //                   locationCallback: (String value) {
+            //                     setState(() {
+            //                       _startAddress = value;
+            //                     });
+            //                   }),
+            //               SizedBox(height: 10),
+            //               _textField(
+            //                   label: '目的位置',
+            //                   hint: '目的位置を入力',
+            //                   prefixIcon: Icon(Icons.directions_walk),
+            //                   controller: destinationAddressController,
+            //                   focusNode: desrinationAddressFocusNode,
+            //                   width: width,
+            //                   locationCallback: (String value) {
+            //                     setState(() {
+            //                       _destinationAddress = value;
+            //                     });
+            //                   }),
+            //               SizedBox(height: 10),
+            //               Visibility(
+            //                 visible: _placeDistance == null ? false : true,
+            //                 child: Text(
+            //                   'DISTANCE: $_placeDistance km',
+            //                   style:
+            //                       TextStyle(color: Colors.white, fontSize: 16),
+            //                 ),
+            //               ),
+            //               SizedBox(height: 5),
+            //               ElevatedButton(
+            //                 onPressed: (_startAddress != '' &&
+            //                         _destinationAddress != '')
+            //                     ? () async {
+            //                         startAddressFocusNode.unfocus();
+            //                         desrinationAddressFocusNode.unfocus();
+            //                         setState(() {
+            //                           if (markers.isNotEmpty) markers.clear();
+            //                           if (polylines.isNotEmpty)
+            //                             polylines.clear();
+            //                           if (polylineCoordinates.isNotEmpty)
+            //                             polylineCoordinates.clear();
+            //                           _placeDistance = null;
+            //                         });
+            //
+            //                         _RouteDistance();
+            //                       }
+            //                     : null,
+            //                 child: Padding(
+            //                   padding: const EdgeInsets.all(8.0),
+            //                   child: Text(
+            //                     'ルート検索'.toUpperCase(),
+            //                     style: TextStyle(
+            //                       color: Colors.white,
+            //                       fontSize: 20.0,
+            //                     ),
+            //                   ),
+            //                 ),
+            //               ),
+            //             ],
+            //           ),
+            //         ),
+            //       ),
+            //     ),
+            //   ),
+            // ),
           ],
         ),
       ),

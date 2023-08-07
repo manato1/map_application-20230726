@@ -2,9 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:map_application_20230726/pages/map.dart';
 import 'package:map_application_20230726/pages/marker.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import '../common/common_widgets.dart';
 import 'category_page.dart';
+import 'package:url_launcher/url_launcher_string.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -14,10 +17,52 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<HomePage> {
+  List<String> catList = []; //カテゴリーのIDのリスト
+  List<List<String>> categoryList = []; //[id,cat_name]のリスト
+  // final _urlLaunchWithStringButton = UrlLaunchWithStringButton();
+
+  getCat() async {
+    var prefs = await SharedPreferences.getInstance();
+    catList = prefs.getStringList("catIdList") ?? [];
+    print("cat id$catList");
+    if (catList.isNotEmpty) {
+      List<List<String>> list = [];
+      for (var i = 0; i < catList!.length; i++) {
+        final String catId = catList![i];
+        final String catName = prefs.getString(catId) ?? "";
+        list.add([catId, catName]);
+      }
+      setState(() {
+        categoryList = list;
+      });
+      print("cat list$categoryList");
+    }
+  }
+
+  int countDivisionsByTwo(int number) {
+    int count = 0;
+    while (number % 2 == 0) {
+      number = number ~/ 2;
+      count++;
+    }
+    return count;
+  }
+
+  getItemCount(List list) {
+    int count;
+    if (list.length % 2 == 1) {
+      count = list.length ~/ 2 + 1;
+    } else {
+      count = list.length ~/ 2;
+    }
+    return count;
+  }
+
   @override
   void initState() {
     super.initState();
     _requestLocationPermission();
+    getCat();
   }
 
   Future<void> _requestLocationPermission() async {
@@ -34,12 +79,10 @@ class _HomePageState extends State<HomePage> {
       print('ロケーションのパーミッションが許可されました');
     }
   }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      // appBar: AppBar(
-      //   title: Text('ff'),
-      // ),
       body: CustomScrollView(
         slivers: <Widget>[
           SliverAppBar(
@@ -51,14 +94,12 @@ class _HomePageState extends State<HomePage> {
                 // margin: EdgeInsets.only(right: 80),
                 padding: EdgeInsets.fromLTRB(10, 10, 10, 10), // 余白を追加
                 child: Row(
+                  mainAxisAlignment: MainAxisAlignment.start,
                   children: [
                     Image.asset(
                       "images/undraw_Destination_re_sr74.png",
+                      width: 200,
                       // fit: BoxFit.cover,
-                    ),
-                    Text(
-                      "title",
-                      style: TextStyle(color: Colors.black, fontSize: 26),
                     ),
                   ],
                 ),
@@ -92,92 +133,107 @@ class _HomePageState extends State<HomePage> {
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: <Widget>[
                       HomeButton1(
-                          iconData: Icons.map, label: 'マップ', color: Colors.red,widget: MapPage()),
+                          iconData: Icons.map,
+                          label: 'マップ',
+                          color: Colors.red,
+                          widget: MapPage(value:[],value2: "",)),
                       HomeButton1(
                           iconData: Icons.location_on,
                           label: 'マーカー',
-                          color: Colors.blue,widget: MarkerPage()),
-                      HomeButton1(
-                          iconData: Icons.format_list_bulleted,
-                          label: 'カテゴリー',
-                          color: Colors.orange,widget: CategoryPage()),
-                      // _buildButton1(Icons.accessible, 'ボタン4', Colors.green),
+                          color: Colors.blue,
+                          widget: MarkerPage(value: "",)),
+                      Container(
+                        width: double.infinity,
+                        height: 70,
+                        margin: EdgeInsets.fromLTRB(40.0, 10, 40, 10),
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(10.0),
+                        ),
+                        child: ElevatedButton(
+                          style: ElevatedButton.styleFrom(
+                            primary: Colors.orange, // background
+                          ),
+                          onPressed: () async {
+                            // ボタンが押された時の処理
+                            await Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                    // （2） 実際に表示するページ(ウィジェット)を指定する
+                                    builder: (context) => CategoryPage()));
+                            getCat();
+                          },
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.start,
+                            children: <Widget>[
+                              Icon(Icons.format_list_bulleted,
+                                  color: Colors.white, size: 30),
+                              SizedBox(width: 8),
+                              Text(
+                                "カテゴリー",
+                                style: TextStyle(
+                                    color: Colors.white, fontSize: 20),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
                     ],
                   ),
                   SizedBox(
                     height: 60,
                   ),
-                  Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: <Widget>[
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: <Widget>[
-                          HomeButton2(label: 'ボタン1'),
-                          HomeButton2(label: 'ボタン1'),
-                        ],
-                      ),
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.start,
-                        children: <Widget>[
-                          HomeButton2(label: 'ボタン1'), // _catButton(
-                          //     'ボタン1'),
-                        ],
-                      ),
-                    ],
-                  ),
+                  // TextButton(
+                  //     onPressed: () async {
+                  //       var prefs = await SharedPreferences.getInstance();
+                  //       final bool ok = await prefs.clear();
+                  //     },
+                  //     child: Text("remove deta")),
+                  categoryList.isNotEmpty
+                      ? Padding(
+                        padding: const EdgeInsets.fromLTRB(10,0,10,0),
+                        child: ListView.builder(
+                            shrinkWrap: true,
+                            physics: NeverScrollableScrollPhysics(),
+                            itemCount: (categoryList.length / 2).ceil(),
+                            // リストに表示するアイテムの数を指定
+                            itemBuilder: (BuildContext context, int index) {
+                              int firstIndex = index * 2;
+                              int secondIndex = firstIndex + 1;
+                              if (firstIndex < categoryList.length) {
+                                return Wrap(
+                                  // spacing: 8.0, // 横方向の要素間のスペース
+                                  // runSpacing: 8.0, // 縦方向の要素間のスペース
+                                  children: [
+                                    HomeButton2(
+                                      label:
+                                          '${categoryList[firstIndex][1]}',
+                                      id: categoryList[firstIndex][0],
+                                    ),
+                                    if (secondIndex < categoryList.length)
+                                      HomeButton2(
+                                          label:
+                                              '${categoryList[secondIndex][1]}',
+                                          id: categoryList[secondIndex][0]),
+                                  ],
+                                );
+                              }
+                            }),
+                      )
+                      : SizedBox.shrink(),
+                  SizedBox(height: 70,),
+                  TextButton(
+                      onPressed: () {
+                        // _urlLaunchWithStringButton.launchUriWithString(
+                        //   context,
+                        //   "https://manama-joho.com/privacy-policy/",
+                        // );
+                      },
+                      child: Text('プライバシーポリシー'))
                 ],
               ),
             ),
           ),
         ],
-      ),
-    );
-  }
-
-  Widget _buildButton1(IconData iconData, String label, Color color) {
-    return Container(
-      width: double.infinity,
-      height: 70,
-      margin: EdgeInsets.fromLTRB(40.0, 10, 40, 10),
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(10.0),
-      ),
-      child: ElevatedButton(
-        style: ElevatedButton.styleFrom(
-          primary: color, // background
-        ),
-        onPressed: () {
-          // ボタンが押された時の処理
-        },
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.start,
-          children: <Widget>[
-            Icon(iconData, color: Colors.white, size: 30),
-            SizedBox(width: 8),
-            Text(
-              label,
-              style: TextStyle(color: Colors.white, fontSize: 20),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _catButton(String label) {
-    return Container(
-      margin: EdgeInsets.fromLTRB(10.0, 10.0, 10.0, 5.0),
-      decoration: BoxDecoration(
-        color: Colors.blueAccent,
-        borderRadius: BorderRadius.circular(10.0),
-      ),
-      child: Padding(
-        padding: EdgeInsets.fromLTRB(40, 10, 40, 13),
-        child: Text(
-          label,
-          style: TextStyle(color: Colors.white, fontSize: 16),
-        ),
       ),
     );
   }

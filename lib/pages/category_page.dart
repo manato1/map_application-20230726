@@ -14,23 +14,27 @@ class CategoryPage extends StatefulWidget {
 }
 
 class _CategoryPageState extends State<CategoryPage> {
-  List<String>? catList; //カテゴリーのIDのリスト
-  List<List<String?>> categoryList = []; //[id,cat_name]のリスト
+  List<String> catList = []; //カテゴリーのIDのリスト
+  List<List<String>> categoryList = []; //[id,cat_name]のリスト
   final _formKey = GlobalKey<FormState>();
   String _category = "";
 
   getCat() async {
     var prefs = await SharedPreferences.getInstance();
-    List<List<String?>> list = [];
-    for (var i = 0; i < catList!.length; i++) {
-      final String catId = catList![i];
-      final String? catName = prefs.getString(catId);
-      list.add([catId, catName]);
+    catList = prefs.getStringList("catIdList") ?? [];
+    print("cat id$catList");
+    if (catList.isNotEmpty) {
+      List<List<String>> list = [];
+      for (var i = 0; i < catList!.length; i++) {
+        final String catId = catList![i];
+        final String catName = prefs.getString(catId) ?? "";
+        list.add([catId, catName]);
+      }
+      setState(() {
+        categoryList = list;
+      });
+      print("cat list$categoryList");
     }
-    setState(() {
-    categoryList = list;
-    });
-    print(categoryList);
   }
 
   Future _deleteCat(BuildContext context, categoryId) async {
@@ -47,9 +51,30 @@ class _CategoryPageState extends State<CategoryPage> {
                     onPressed: () async {
                       //削除処理
                       var prefs = await SharedPreferences.getInstance();
-                      catList!.remove(categoryId);
-                      prefs.setStringList("catIdList", catList!);
+                      catList.remove(categoryId);
+                      prefs.setStringList("catIdList", catList);
                       final ret = await prefs.remove(categoryId);
+
+                      //catIdがさくじょIDのmarkerを削除
+                      List<String>? markerIdList;
+                      List<List<String>> markerList = [];
+                      markerIdList = prefs.getStringList("markerIdList");
+                      if (markerIdList != null) {
+                        for (var i = 0; i < markerIdList.length; i++) {
+                          final List<String>? marker =
+                              prefs.getStringList(markerIdList[i]);
+                          if (marker != null) {
+                            if (marker[0] == categoryId) {
+                              //カテゴリー一致すれば削除
+                              await prefs.remove(markerIdList[i]);
+                              ////カテゴリー一致でマーカーIDのリストからID削除
+                              markerIdList.remove(markerIdList[i]);
+                            }
+                          }
+                        }
+                        prefs.setStringList("markerIdList", markerIdList);
+                      }
+
                       getCat();
                       Navigator.pop(context, true);
                     },
@@ -98,12 +123,12 @@ class _CategoryPageState extends State<CategoryPage> {
                         var prefs = await SharedPreferences.getInstance();
                         final catId = CommonMethods().createRandamString();
                         //まだカテゴリーが一つもないとき
-                        if (catList == null) {
+                        if (catList == []) {
                           // catList = [catId];
                           prefs.setStringList("catIdList", [catId]);
                           prefs.setString(catId, _category);
                         } else {
-                          catList!.add(catId);
+                          catList.add(catId);
                           prefs.setStringList("catIdList", catList!);
                           prefs.setString(catId, _category);
                         }
@@ -128,122 +153,40 @@ class _CategoryPageState extends State<CategoryPage> {
   @override
   void initState() {
     super.initState();
-    Future(() async {
-      var prefs = await SharedPreferences.getInstance();
-      catList = prefs.getStringList("catIdList");
-      print(catList);
-      getCat();
-    });
+    getCat();
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text("カテゴリー"),
+        title: Text("カテゴリー"),backgroundColor: Colors.orange,
       ),
-      body: SingleChildScrollView(
-        child: Column(
-          children: [
-            SizedBox(
-              height: 40,
-            ),
-            //カテゴリー追加
-            Center(
-                child: TextButton(
-              onPressed: () {
-                _addCat(context);
-              },
-              child: Text(
-                'カテゴリー追加',
-              ),
-              style: TextButton.styleFrom(
-                padding: EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-                primary: Colors.white,
-                backgroundColor: Colors.blue,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                textStyle: TextStyle(fontSize: 16),
-              ),
-            )),
-            catList != null
-                ? ListView.builder(
-                    shrinkWrap: true,
-                    physics: NeverScrollableScrollPhysics(),
-                    itemCount: categoryList.length, // リストに表示するアイテムの数を指定
-                    itemBuilder: (BuildContext context, int index) {
-                      return ListTile(
-                          title: Text(categoryList[index][1]!),
-                          trailing: IconButton(
-                            icon: const Icon(Icons.delete),
-                            onPressed: () {
-                              // 削除確認
-                              _deleteCat(context, categoryList[index][0]);
-                            },
-                          ));
-                    })
-                // StreamBuilder<List<List<String?>>>(
-                //         stream: stream, // データのストリームを指定
-                //         builder: (context, snapshot) {
-                //           if (snapshot.connectionState == ConnectionState.waiting) {
-                //             // データがまだ到着していない場合の処理
-                //             return CircularProgressIndicator();
-                //           } else if (snapshot.hasError) {
-                //             // エラーが発生した場合の処理
-                //             return Text('Error: ${snapshot.error}');
-                //           } else {
-                //             // データが到着した場合の処理
-                //             final data = snapshot.data;
-                //             // データを使ってウィジェットを生成
-                //             return ListView.builder(
-                //                 shrinkWrap: true,
-                //                 physics: NeverScrollableScrollPhysics(),
-                //                 itemCount: categoryList.length, // リストに表示するアイテムの数を指定
-                //                 itemBuilder: (BuildContext context, int index) {
-                //                   return ListTile(
-                //                       title: Text(categoryList[index][1]!),
-                //                       trailing: IconButton(
-                //                         icon: const Icon(Icons.delete),
-                //                         onPressed: () {
-                //                           // 削除確認
-                //                           _deleteCat(
-                //                               context, categoryList[index][0]);
-                //                         },
-                //                       ));
-                //                 });
-                //           }
-                //         },
-                //       )
-                // FutureBuilder(
-                //         future: getCat(),
-                //         builder: (BuildContext context, AsyncSnapshot snapshot) {
-                //           if (snapshot.hasError) {
-                //             return Text('${snapshot.error}');
-                //           }
-                //           print("snapshot.data");
-                //
-                //           print(snapshot.data);
-                //           return ListView.builder(
-                //               shrinkWrap: true,
-                //               physics: NeverScrollableScrollPhysics(),
-                //               itemCount: categoryList.length, // リストに表示するアイテムの数を指定
-                //               itemBuilder: (BuildContext context, int index) {
-                //                 return ListTile(
-                //                     title: Text(snapshot.data[index][1]!),
-                //                     trailing: IconButton(
-                //                       icon: const Icon(Icons.delete),
-                //                       onPressed: () {
-                //                         // 削除確認
-                //                         _deleteCat(context, snapshot.data[index][0]);
-                //                       },
-                //                     ));
-                //               });
-                //         })
-                : SizedBox.shrink(),
-          ],
-        ),
+      body: catList.isNotEmpty
+          ? ListView.builder(
+              shrinkWrap: true,
+              physics: NeverScrollableScrollPhysics(),
+              itemCount: categoryList.length, // リストに表示するアイテムの数を指定
+              itemBuilder: (BuildContext context, int index) {
+                return ListTile(
+                    title: Text(categoryList[index][1]),
+                    trailing: IconButton(
+                      icon: const Icon(Icons.delete),
+                      onPressed: () {
+                        // 削除確認
+                        _deleteCat(context, categoryList[index][0]);
+                      },
+                    ));
+              })
+          : Center(child: Text("カテゴリーはありません")),
+      floatingActionButton: FloatingActionButton(
+        onPressed: () {
+          _addCat(context);
+        },
+        child: Icon(Icons.add), // プラスアイコンを設定
       ),
+      floatingActionButtonLocation:
+          FloatingActionButtonLocation.endFloat, // ボタンを右下に配置
     );
   }
 }

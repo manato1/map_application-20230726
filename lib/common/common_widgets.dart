@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:map_application_20230726/pages/home_page.dart';
+import 'package:map_application_20230726/pages/marker.dart';
 
 import '../pages/map.dart';
 
-class HomeButton1 extends StatelessWidget{
+class HomeButton1 extends StatelessWidget {
   const HomeButton1({
     super.key,
     required this.iconData,
@@ -21,7 +23,7 @@ class HomeButton1 extends StatelessWidget{
     return Container(
       width: double.infinity,
       height: 70,
-      margin: EdgeInsets.fromLTRB(40.0,10,40,10),
+      margin: EdgeInsets.fromLTRB(40.0, 10, 40, 10),
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(10.0),
       ),
@@ -34,7 +36,7 @@ class HomeButton1 extends StatelessWidget{
           Navigator.push(
               context,
               MaterialPageRoute(
-                // （2） 実際に表示するページ(ウィジェット)を指定する
+                  // （2） 実際に表示するページ(ウィジェット)を指定する
                   builder: (context) => widget));
         },
         child: Row(
@@ -53,28 +55,38 @@ class HomeButton1 extends StatelessWidget{
   }
 }
 
-class HomeButton2 extends StatelessWidget{
+class HomeButton2 extends StatelessWidget {
   const HomeButton2({
     super.key,
     required this.label,
+    required this.id,
+
   });
 
   final String label;
+  final String id;
+
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      margin: EdgeInsets.fromLTRB(10.0,10.0,10.0,5.0),
+      margin: EdgeInsets.fromLTRB(10.0, 10.0, 10.0, 5.0),
+      padding: EdgeInsets.fromLTRB(10.0, 10.0, 10.0, 5.0),
       decoration: BoxDecoration(
         color: Colors.blueAccent,
         borderRadius: BorderRadius.circular(10.0),
       ),
-      child: Padding(
-        padding: EdgeInsets.fromLTRB(40,10,40,13),
-        child: Text(
-          label,
-          style: TextStyle(color: Colors.white, fontSize: 16),
-        ),
+      child: TextButton(
+        child: Text(label, style: TextStyle(color: Colors.white, fontSize: 16)),
+        onPressed: () {
+
+           Navigator.push(
+              context,
+              MaterialPageRoute(
+                // （2） 実際に表示するページ(ウィジェット)を指定する
+                  builder: (context) => MarkerPage(value: id)));
+
+        },
       ),
     );
   }
