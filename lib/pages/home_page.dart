@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:geolocator/geolocator.dart';
+import 'package:map_application_20230726/common/common_methods.dart';
 import 'package:map_application_20230726/pages/map.dart';
 import 'package:map_application_20230726/pages/marker.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -19,7 +20,6 @@ class HomePage extends StatefulWidget {
 class _HomePageState extends State<HomePage> {
   List<String> catList = []; //カテゴリーのIDのリスト
   List<List<String>> categoryList = []; //[id,cat_name]のリスト
-  // final _urlLaunchWithStringButton = UrlLaunchWithStringButton();
 
   getCat() async {
     var prefs = await SharedPreferences.getInstance();
@@ -223,10 +223,7 @@ class _HomePageState extends State<HomePage> {
                   SizedBox(height: 70,),
                   TextButton(
                       onPressed: () {
-                        // _urlLaunchWithStringButton.launchUriWithString(
-                        //   context,
-                        //   "https://manama-joho.com/privacy-policy/",
-                        // );
+                        CommonMethods().launchURL('https://manama-joho.com/map-application/privacy-policy/');
                       },
                       child: Text('プライバシーポリシー'))
                 ],

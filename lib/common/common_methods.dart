@@ -1,6 +1,7 @@
 import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 class CommonMethods{
   void showSnackBar(BuildContext context,text) {
@@ -50,4 +51,12 @@ class CommonMethods{
       CommonMethods().showSnackBar(context, "マーカーを追加できませんでした。");
     }
   }
+  void launchURL(String url) async {
+    if (!await launchUrl(
+      Uri.parse(url),
+    )) {
+      throw "エラー";
+    }
+  }
+
 }
