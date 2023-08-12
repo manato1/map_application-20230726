@@ -119,7 +119,6 @@ class _AddMarkerPageState extends State<AddMarkerPage> {
                     //失敗したら追加不可能
                     List<Location> result =
                         await getPlacemarkFromAddress(value);
-                    print(result.isNotEmpty);
                     if (result.isNotEmpty) {
                       _address = value;
                       latitude = result![0].latitude;
@@ -140,6 +139,8 @@ class _AddMarkerPageState extends State<AddMarkerPage> {
                   validator: (value) {
                     if (value == null || value.isEmpty) {
                       return 'タイトルを入力してください';
+                    }else if(value.length > 15){
+                      return '15文字以下にしてください';
                     }
                     return null;
                   },

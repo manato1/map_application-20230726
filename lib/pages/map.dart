@@ -176,8 +176,8 @@ class MapPageState extends State<MapPage> {
             markerId: MarkerId(id),
             position: LatLng(latitude, longitude),
             infoWindow: InfoWindow(
-              title: '$title' + address != "" ? " - $address" : "",
-              snippet: text + cat != "" ? "- $cat" : "",
+              title: address != "" ? title + "-" + address : title,
+              snippet: cat != "" ? text + "-" + cat: text,
             ),
             icon: BitmapDescriptor.defaultMarker,
           );
@@ -494,6 +494,8 @@ String title ="";
                               validator: (value) {
                                 if (value == null || value.isEmpty) {
                                   return 'タイトルを入力してください';
+                                }else if(value.length > 15){
+                                  return '15文字以下にしてください';
                                 }
                                 return null;
                               },
@@ -537,8 +539,26 @@ String title ="";
                                         _addres,
                                         _tappedLatLng!.latitude,
                                         _tappedLatLng!.longitude);
+
+                                    Marker realMarker = Marker(
+                                      markerId: MarkerId(_tappedLatLng!.latitude.toString() +
+                                          _tappedLatLng!.longitude.toString()),
+                                      position: LatLng(_tappedLatLng!.latitude, _tappedLatLng!.longitude),
+                                      infoWindow: InfoWindow(
+                                        title: _title,
+                                        snippet: _text,
+                                      ),
+                                      icon: BitmapDescriptor.defaultMarker,
+                                    );
+                                    // setState(() {
+                                    setState(() {
+                                      markers.add(realMarker);
+                                    });
+                                    // });
                                     _added = true;
                                     _categoryId = "";
+                                    _title = "";
+                                    _text = "";
                                     Navigator.of(context)
                                         .pop('モーダルを閉じました'); // モーダルを閉じる
                                   } catch (e) {
@@ -554,12 +574,15 @@ String title ="";
                     ])));
       },
     );
-    // 保存されずにモーダルが閉じられたらマーカー消す
-    if (_added == false && result != null) {
-      setState(() {
-        markers.remove(marker);
-      });
-    }
+    setState(() {
+      markers.remove(marker);
+
+    });
+
+    // // 保存されずにモーダルが閉じられたらマーカー消す
+    // if (_added == false && result != null) {
+    //
+    // }
   }
 
   Future _chooseCategory(BuildContext context) async {
@@ -628,10 +651,10 @@ String title ="";
                     markerId: MarkerId(latLng.latitude.toString() +
                         latLng.longitude.toString()),
                     position: LatLng(latLng.latitude, latLng.longitude),
-                    infoWindow: InfoWindow(
-                      title: 'Destination $latLng.latitude',
-                      snippet: _destinationAddress,
-                    ),
+                    // infoWindow: InfoWindow(
+                    //   title: _title,
+                    //   snippet: _text,
+                    // ),
                     icon: BitmapDescriptor.defaultMarker,
                   );
                   setState(() {
