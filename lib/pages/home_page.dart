@@ -200,9 +200,8 @@ class _HomePageState extends State<HomePage> {
                               int firstIndex = index * 2;
                               int secondIndex = firstIndex + 1;
                               if (firstIndex < categoryList.length) {
-                                return Wrap(
-                                  // spacing: 8.0, // 横方向の要素間のスペース
-                                  // runSpacing: 8.0, // 縦方向の要素間のスペース
+                                return Row(
+                                  mainAxisAlignment: MainAxisAlignment.center,
                                   children: [
                                     HomeButton2(
                                       label:

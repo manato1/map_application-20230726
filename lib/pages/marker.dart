@@ -125,41 +125,43 @@ class _MarkerPageState extends State<MarkerPage> {
       ),
       body: Container(
           child: markerIdList != null
-              ? ListView.builder(
-                  shrinkWrap: true,
-                  physics: NeverScrollableScrollPhysics(),
-                  itemCount: markerList.length, // リストに表示するアイテムの数を指定
-                  itemBuilder: (BuildContext context, int index) {
-                    return Padding(
-                      padding: const EdgeInsets.fromLTRB(4, 10, 4, 0),
-                      child: ListTile(
-                        tileColor: Colors.grey[300],
-                        title: Text(markerList[index][1] != ""
-                            ? "${markerList[index][2]} - ${markerList[index][1]}"
-                            : markerList[index][2]),
-                        subtitle: Text(markerList[index][4] != ""
-                            ? "${markerList[index][4]}\n${markerList[index][3]}"
-                            : markerList[index][3]),
-                        trailing: IconButton(
-                          icon: const Icon(Icons.delete),
-                          onPressed: () {
-                            // 削除確認
-                            _deleteMarker(context, markerList[index][0]);
+              ? SingleChildScrollView(
+                child: ListView.builder(
+                    shrinkWrap: true,
+                    physics: NeverScrollableScrollPhysics(),
+                    itemCount: markerList.length, // リストに表示するアイテムの数を指定
+                    itemBuilder: (BuildContext context, int index) {
+                      return Padding(
+                        padding: const EdgeInsets.fromLTRB(4, 10, 4, 0),
+                        child: ListTile(
+                          tileColor: Colors.grey[300],
+                          title: Text(markerList[index][1] != ""
+                              ? "${markerList[index][2]} - ${markerList[index][1]}"
+                              : markerList[index][2]),
+                          subtitle: Text(markerList[index][4] != ""
+                              ? "${markerList[index][4]}\n${markerList[index][3]}"
+                              : markerList[index][3]),
+                          trailing: IconButton(
+                            icon: const Icon(Icons.delete),
+                            onPressed: () {
+                              // 削除確認
+                              _deleteMarker(context, markerList[index][0]);
+                            },
+                          ),
+                          onTap: () {
+                            Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                    // （2） 実際に表示するページ(ウィジェット)を指定する
+                                    builder: (context) => MapPage(
+                                          value: [markerList[index][0]],
+                                          value2: markerList[index][2],
+                                        )));
                           },
                         ),
-                        onTap: () {
-                          Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                  // （2） 実際に表示するページ(ウィジェット)を指定する
-                                  builder: (context) => MapPage(
-                                        value: [markerList[index][0]],
-                                        value2: markerList[index][2],
-                                      )));
-                        },
-                      ),
-                    );
-                  })
+                      );
+                    }),
+              )
               : Center(child: Text("マーカーはありません"))),
       floatingActionButton: FloatingActionButton(
         onPressed: () async {

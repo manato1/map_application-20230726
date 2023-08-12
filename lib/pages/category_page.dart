@@ -101,6 +101,8 @@ class _CategoryPageState extends State<CategoryPage> {
                   validator: (value) {
                     if (value == null || value.isEmpty) {
                       return 'カテゴリーを入力してください';
+                    }else if(value.length > 15){
+                      return '15文字以下にしてください';
                     }
                     return null;
                   },

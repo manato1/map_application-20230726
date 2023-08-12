@@ -3,7 +3,6 @@ import 'package:geolocator/geolocator.dart';
 import 'package:map_application_20230726/pages/home_page.dart';
 
 void main() {
-
   runApp(const MyApp());
 }
 
@@ -14,7 +13,7 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'my-map',
+      title: 'オウンマップ',
       debugShowCheckedModeBanner: false,
       home: const HomePage(),
     );
