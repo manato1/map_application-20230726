@@ -91,7 +91,7 @@ class HomeButton2 extends StatelessWidget {
                   builder: (context) => MarkerPage(value: id)));
         },
         style: ElevatedButton.styleFrom(
-          fixedSize: isIPad?Size(300, 50.0):Size(bottonWidth, 50.0), // ボタンのサイズを指定
+          fixedSize: isIPad?Size(150, 50.0):Size(bottonWidth, 50.0), // ボタンのサイズを指定
         ),
         child: TruncatedText(
           label,

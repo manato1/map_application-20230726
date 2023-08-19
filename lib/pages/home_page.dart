@@ -103,7 +103,7 @@ class _HomePageState extends State<HomePage> {
                   children: [
                     Image.asset(
                       "images/undraw_Destination_re_sr74.png",
-                      width: isIPad? 600:200,
+                      width: isIPad? 500:200,
                       // fit: BoxFit.cover,
                     ),
                   ],
@@ -113,7 +113,7 @@ class _HomePageState extends State<HomePage> {
           ),
           SliverToBoxAdapter(
             child: Container(
-              padding: isIPad?EdgeInsets.fromLTRB(140, 20, 140, 160):EdgeInsets.fromLTRB(0, 10, 0, 160),
+              padding: isIPad?EdgeInsets.fromLTRB(100, 20, 100, 160):EdgeInsets.fromLTRB(0, 10, 0, 160),
               decoration: BoxDecoration(
                 border: Border.all(color: Colors.black38),
                 color: Colors.grey.shade100,
