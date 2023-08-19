@@ -23,18 +23,20 @@ class _CategoryPageState extends State<CategoryPage> {
     var prefs = await SharedPreferences.getInstance();
     catList = prefs.getStringList("catIdList") ?? [];
     print("cat id$catList");
+    List<List<String>> list = [];
+
     if (catList.isNotEmpty) {
-      List<List<String>> list = [];
       for (var i = 0; i < catList!.length; i++) {
         final String catId = catList![i];
         final String catName = prefs.getString(catId) ?? "";
         list.add([catId, catName]);
       }
-      setState(() {
-        categoryList = list;
-      });
+
       print("cat list$categoryList");
     }
+    setState(() {
+      categoryList = list;
+    });
   }
 
   Future _deleteCat(BuildContext context, categoryId) async {

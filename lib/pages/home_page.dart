@@ -25,18 +25,19 @@ class _HomePageState extends State<HomePage> {
     var prefs = await SharedPreferences.getInstance();
     catList = prefs.getStringList("catIdList") ?? [];
     print("cat id$catList");
+    List<List<String>> list = [];
     if (catList.isNotEmpty) {
-      List<List<String>> list = [];
       for (var i = 0; i < catList!.length; i++) {
         final String catId = catList![i];
         final String catName = prefs.getString(catId) ?? "";
         list.add([catId, catName]);
       }
-      setState(() {
-        categoryList = list;
-      });
+
       print("cat list$categoryList");
     }
+    setState(() {
+      categoryList = list;
+    });
   }
 
   int countDivisionsByTwo(int number) {
@@ -82,23 +83,27 @@ class _HomePageState extends State<HomePage> {
 
   @override
   Widget build(BuildContext context) {
+    // 画面のサイズを取得
+    Size screenSize = MediaQuery.of(context).size;
+    // iPadの場合の条件
+    bool isIPad = screenSize.shortestSide > 600;
     return Scaffold(
       body: CustomScrollView(
         slivers: <Widget>[
           SliverAppBar(
             backgroundColor: Colors.white,
-            expandedHeight: 200.0,
+            expandedHeight: isIPad?400:200.0,
             flexibleSpace: FlexibleSpaceBar(
               // title: Text("title",style: TextStyle(color: Colors.black),),
               background: Container(
                 // margin: EdgeInsets.only(right: 80),
-                padding: EdgeInsets.fromLTRB(10, 10, 10, 10), // 余白を追加
+                padding: isIPad?EdgeInsets.fromLTRB(10, 30, 10, 30):EdgeInsets.fromLTRB(10, 10, 10, 10), // 余白を追加
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.start,
                   children: [
                     Image.asset(
                       "images/undraw_Destination_re_sr74.png",
-                      width: 200,
+                      width: isIPad? 600:200,
                       // fit: BoxFit.cover,
                     ),
                   ],
@@ -108,7 +113,7 @@ class _HomePageState extends State<HomePage> {
           ),
           SliverToBoxAdapter(
             child: Container(
-              padding: EdgeInsets.fromLTRB(0, 10, 0, 160),
+              padding: isIPad?EdgeInsets.fromLTRB(140, 20, 140, 160):EdgeInsets.fromLTRB(0, 10, 0, 160),
               decoration: BoxDecoration(
                 border: Border.all(color: Colors.black38),
                 color: Colors.grey.shade100,
@@ -161,6 +166,7 @@ class _HomePageState extends State<HomePage> {
                                     // （2） 実際に表示するページ(ウィジェット)を指定する
                                     builder: (context) => CategoryPage()));
                             getCat();
+                            print("back");
                           },
                           child: Row(
                             mainAxisAlignment: MainAxisAlignment.start,

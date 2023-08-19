@@ -71,6 +71,10 @@ class HomeButton2 extends StatelessWidget {
   Widget build(BuildContext context) {
     final screenWidth = MediaQuery.of(context).size.width;
     final bottonWidth = screenWidth / 2 - 60;
+    // 画面のサイズを取得
+    Size screenSize = MediaQuery.of(context).size;
+    // iPadの場合の条件
+    bool isIPad = screenSize.shortestSide > 600;
     return Container(
       margin: EdgeInsets.fromLTRB(10.0, 10.0, 10.0, 5.0),
       // padding: EdgeInsets.fromLTRB(10.0, 10.0, 10.0, 5.0),
@@ -87,7 +91,7 @@ class HomeButton2 extends StatelessWidget {
                   builder: (context) => MarkerPage(value: id)));
         },
         style: ElevatedButton.styleFrom(
-          fixedSize: Size(bottonWidth, 50.0), // ボタンのサイズを指定
+          fixedSize: isIPad?Size(300, 50.0):Size(bottonWidth, 50.0), // ボタンのサイズを指定
         ),
         child: TruncatedText(
           label,
