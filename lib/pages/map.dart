@@ -468,14 +468,6 @@ String title ="";
                         },
                         child: Text('モーダルを閉じる'),
                       ),
-                      Text(
-                        'タップした位置のマーカー情報',
-                        style: TextStyle(
-                            fontSize: 18.0, fontWeight: FontWeight.bold),
-                      ),
-                      SizedBox(height: 8.0),
-                      Text('緯度: ${_tappedLatLng!.latitude}'),
-                      Text('経度: ${_tappedLatLng!.longitude}'),
                       SizedBox(height: 16.0),
                       catList != null
                           ? TextButton(
